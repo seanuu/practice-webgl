@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="../lib/utils.js"></script>
+</head>
+<body>
+<canvas id="canvas" width="800" height="500"></canvas>
+
+</body>
+
+<script>
+    // get webgl context
+    let canvas = document.getElementById('canvas');
+    let gl = canvas.getContext('webgl');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // clear background
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+</script>
+</html>

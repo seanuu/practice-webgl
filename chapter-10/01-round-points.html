@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://cdn.bootcss.com/d3/5.9.2/d3.min.js"></script>
+    <script src="../lib/three.js"></script>
+    <script src="../lib/utils.js"></script>
+</head>
+<body>
+<canvas id="canvas" width="800px" height="500px"></canvas>
+
+</body>
+
+<script>
+    const VERTEX_SHADER = `
+    attribute vec4 a_Position;
+
+    void main() {
+        gl_Position = a_Position;
+        gl_PointSize = 30.0;
+    }`;
+    const FRAGMENT_SHADER = `
+    precision mediump float;
+    uniform vec4 u_FragColor;
+
+    void main() {
+        float dist = distance(gl_PointCoord, vec2(0.5, 0.5));
+        if (dist > 0.5) {
+            discard;
+        }
+
+        gl_FragColor = u_FragColor;
+    }`;
+
+    // get webgl context
+    let canvas = document.getElementById('canvas');
+    let gl = canvas.getContext('webgl');
+
+    // Init shader and gl_program
+    initProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+
+    // Specify the color for clearing <canvas>
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+    // Clear <canvas>
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    let g_points = [];
+    let a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+    let u_FragColor = gl.getUniformLocation(gl.program, 'u_FragColor');
+
+    d3.select(canvas).on('click', () => {
+        let m = d3.mouse(canvas);
+        let rect = canvas.getBoundingClientRect();
+        let mouse = {x: (m[0] / rect.width) * 2 - 1, y: -(m[1] / rect.height) * 2 + 1};
+        g_points.push(mouse);
+
+        // Clear <canvas>
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        for (let i = 0; i < g_points.length; i++) {
+            // transfer point position
+            gl.vertexAttrib3f(a_Position, g_points[i].x, g_points[i].y, 0.0);
+
+            // // transfer uniform frag color
+            gl.uniform4f(u_FragColor, i * 0.1 % 1, i * 0.2 % 1, i * 0.3 % 1, 1.0);
+
+            // draw point
+            gl.drawArrays(gl.POINTS, 0, 1);
+        }
+    });
+</script>
+</html>
