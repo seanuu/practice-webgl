@@ -67,6 +67,9 @@
       <dir>G:\webgl-programming\chapter-02</dir>
     </dirStrings>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
@@ -122,6 +125,7 @@
     <option name="width" value="974" />
     <option name="height" value="1047" />
   </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
@@ -209,12 +213,12 @@
       <workItem from="1562660937267" duration="606000" />
       <workItem from="1563783047967" duration="366000" />
       <workItem from="1565016582474" duration="1907000" />
-      <workItem from="1565197439625" duration="278000" />
+      <workItem from="1565197439625" duration="445000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="122243000" />
+    <option name="totallyTimeSpent" value="122410000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
