@@ -202,8 +202,6 @@
         normalMatrix.transpose();
         gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
 
-
-
         // Draw the cube
         gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
         gl.clearColor(0.2, 0.2, 0.2, 1.0); // Set clear color (the color is slightly changed)
@@ -222,10 +220,10 @@
         normalMatrix.transpose();
         gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
 
-
-
         // // Clear color and depth buffer
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+
         gl.clearColor(0.0, 0.0, 0.0, 1.0); // Set clear color (the color is slightly changed)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);  // Clear FBO
 
@@ -252,6 +250,8 @@
         gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer); // Bind the object to target
         gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
 
+        gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+
         // Attach the texture and the renderbuffer object to the FBO
         gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
@@ -260,7 +260,6 @@
         // Unbind the buffer object
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.bindTexture(gl.TEXTURE_2D, null);
-        gl.bindRenderbuffer(gl.RENDERBUFFER, null);
 
         return frameBuffer;
     }

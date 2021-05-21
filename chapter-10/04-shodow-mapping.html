@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://cdn.bootcss.com/d3/5.9.2/d3.min.js"></script>
+    <script src="../lib/three.js"></script>
+    <script src="../lib/object.js"></script>
+    <script src="../lib/utils.js"></script>
+    <script src="../lib/cuon-matrix.js"></script>
+</head>
+<body>
+<canvas id="canvas" width="800px" height="500px"></canvas>
+</body>
+
+<script>
+const SHADOW_VERTEX_SHADER = `
+    attribute vec4 a_Position;
+    uniform mat4 u_MvpMatrix;
+
+    void main() {
+        gl_Position = u_MvpMatrix * a_Position;
+    }
+`;
+const SHADOW_FRAGMENT_SHADER = `
+    void main() {
+        gl_FragColor = vec4(gl_FragCoord.z, 0.0, 0.0, 1.0);
+    }
+`;
+
+const VERTEX_SHADER = `
+    attribute vec4 a_Position;
+    attribute vec4 a_Color;
+    uniform mat4 u_MvpMatrix;
+    uniform mat4 u_MvpMatrixFromLight;
+
+    varying vec4 v_Color;
+    varying vec4 v_PositionFromLight;
+
+    void main() {
+        gl_Position = u_MvpMatrix * a_Position;
+        v_Color = a_Color;
+        v_PositionFromLight = u_MvpMatrixFromLight * a_Position;
+    }
+`;
+const FRAGMENT_SHADER = `
+    #ifdef GL_ES
+        precision mediump float;
+    #endif
+
+    uniform sampler2D u_Sampler;
+    varying vec4 v_Color;
+    varying vec4 v_PositionFromLight;
+
+    void main() {
+        // 计算对应于阴影贴图中的屏幕坐标，坐标系[-1,1] => [0, 1]
+        vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;
+
+        // 获取纹素，取出深度信息
+        vec4 shadowDepth = texture2D(u_Sampler, shadowCoord.xy);
+        float depth = shadowDepth.r;
+
+        float visibility = (shadowCoord.z > depth + (1.0 / 255.0)) ? 0.7 : 1.0;
+        gl_FragColor = vec4(v_Color.rgb * visibility, v_Color.a);
+    }`;
+
+const OFFSCREEN_WIDTH = 4096, OFFSCREEN_HEIGHT = 4096;
+const LIGHT_X = 0, LIGHT_Y = 7, LIGHT_Z = 2; // Position of the light source
+
+const canvas = document.getElementById('canvas');
+const gl = canvas.getContext('webgl');
+gl.clearColor(0.0, 0.0, 0.0, 1.0);
+gl.enable(gl.DEPTH_TEST);
+gl.enable(gl.STENCIL_TEST);
+
+const frameBuffer = initFrameBuffer(gl, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
+gl.activeTexture(gl.TEXTURE0);
+gl.bindTexture(gl.TEXTURE_2D, frameBuffer.texture);
+
+const shadowProgram = createProgram(gl, SHADOW_VERTEX_SHADER, SHADOW_FRAGMENT_SHADER);
+shadowProgram.a_Position = gl.getAttribLocation(shadowProgram, 'a_Position');
+shadowProgram.u_MvpMatrix = gl.getUniformLocation(shadowProgram, 'u_MvpMatrix');
+
+const normalProgram = createProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+normalProgram.a_Position = gl.getAttribLocation(normalProgram, 'a_Position');
+normalProgram.a_Color = gl.getAttribLocation(normalProgram, 'a_Color');
+
+normalProgram.u_MvpMatrix = gl.getUniformLocation(normalProgram, 'u_MvpMatrix');
+normalProgram.u_MvpMatrixFromLight = gl.getUniformLocation(normalProgram, 'u_MvpMatrixFromLight');
+normalProgram.u_Sampler = gl.getUniformLocation(normalProgram, 'u_Sampler');
+
+const triangle = initVertexBuffersForTriangle(gl);
+const plan = initVertexBuffersForPlane(gl);
+
+const g_modelMatrix = new Matrix4();
+const g_mvpMatrix = new Matrix4();
+
+const vpMatrix = new Matrix4();
+const mvpMatrixFromLight_t = new Matrix4();
+const mvpMatrixFromLight_p = new Matrix4();
+
+let angle = 0.0;
+
+animate();
+
+function animate() {
+    angle += 0.25;
+
+    /**
+     * 绘制阴影贴图
+     */
+    gl.useProgram(shadowProgram);
+    vpMatrix.setPerspective(90.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, 1.0, 100.0);
+    vpMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+    gl.viewport(0, 0, OFFSCREEN_HEIGHT, OFFSCREEN_HEIGHT);
+    gl.clearColor(0.0, 0.0, 0.0, 0.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+    drawTriangle(gl, shadowProgram, triangle, angle, vpMatrix);
+    mvpMatrixFromLight_t.set(g_mvpMatrix);
+
+    drawPlane(gl, shadowProgram, plan, vpMatrix);
+    mvpMatrixFromLight_p.set(g_mvpMatrix);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+
+    /**
+     * 绘制内容
+     */
+    gl.useProgram(normalProgram);
+    vpMatrix.setPerspective(45, canvas.width / canvas.height, 1.0, 100.0);
+    vpMatrix.lookAt(0.0, 7.0, 9.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.uniform1i(normalProgram.u_Sampler, 0);
+
+    gl.uniformMatrix4fv(normalProgram.u_MvpMatrixFromLight, false, mvpMatrixFromLight_t.elements);
+    drawTriangle(gl, normalProgram, triangle, angle, vpMatrix);
+
+    gl.uniformMatrix4fv(normalProgram.u_MvpMatrixFromLight, false, mvpMatrixFromLight_p.elements);
+    drawPlane(gl, normalProgram, plan, vpMatrix);
+
+    requestAnimationFrame(animate);
+}
+
+function drawTriangle(gl, program, triangle, angle, viewProjMatrix) {
+    // Set rotate angle to model matrix and draw triangle
+    g_modelMatrix.setRotate(angle, 0, 1, 0);
+    draw(gl, program, triangle, viewProjMatrix);
+}
+
+function drawPlane(gl, program, plane, viewProjMatrix) {
+    // Set rotate angle to model matrix and draw plane
+    g_modelMatrix.setRotate(-45, 0, 1, 1);
+    draw(gl, program, plane, viewProjMatrix);
+}
+
+function draw(gl, program, obj, viewProjMatrix) {
+    initAttributeVariable(gl, program.a_Position, obj.vertexBuffer);
+    if (program.a_Color !== undefined) // If a_Color is defined to attribute
+        initAttributeVariable(gl, program.a_Color, obj.colorBuffer);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, obj.indexBuffer);
+
+    g_mvpMatrix.set(viewProjMatrix);
+    g_mvpMatrix.multiply(g_modelMatrix);
+
+    gl.uniformMatrix4fv(program.u_MvpMatrix, false, g_mvpMatrix.elements);
+
+    gl.drawElements(gl.TRIANGLES, obj.numIndices, gl.UNSIGNED_BYTE, 0);
+}
+
+// Assign the buffer objects and enable the assignment
+function initAttributeVariable(gl, a_attribute, buffer) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.vertexAttribPointer(a_attribute, buffer.num, buffer.type, false, 0, 0);
+    gl.enableVertexAttribArray(a_attribute);
+}
+</script>
+</html>

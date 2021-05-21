@@ -12,7 +12,7 @@
 
 </body>
 <script>
-    const VERTEX_SHADER = `
+const VERTEX_SHADER = `
     attribute vec4 a_Position;
     attribute vec4 a_Color;
     uniform mat4 u_MvpMatrix;
@@ -22,82 +22,112 @@
         v_Color = a_Color;
         gl_Position = u_MvpMatrix * a_Position;
     }`;
-    const FRAGMENT_SHADER = `
+const FRAGMENT_SHADER = `
     #ifdef GL_ES
         precision mediump float;
     #endif
+    uniform vec4 u_Color;
     varying vec4 v_Color;
 
     void main() {
-        gl_FragColor = v_Color;
+        gl_FragColor = u_Color.r != 0.0 ? u_Color : v_Color;
     }`;
 
-    // get webgl context
-    let canvas = document.getElementById('canvas');
-    let gl = canvas.getContext('webgl');
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.enable(gl.DEPTH_TEST);
+// get webgl context
+let canvas = document.getElementById('canvas');
+let gl = canvas.getContext('webgl', {stencil: true});
+gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-    // init shader program
-    initProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+// init shader program
+initProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
 
-    let vertices = new Float32Array([
-        // Vertex coordinates and color
-        1.0, 1.0, 1.0, 1.0, 1.0, 1.0,  // v0 White
-        -1.0, 1.0, 1.0, 1.0, 0.0, 1.0,  // v1 Magenta
-        -1.0, -1.0, 1.0, 1.0, 0.0, 0.0,  // v2 Red
-        1.0, -1.0, 1.0, 1.0, 1.0, 0.0,  // v3 Yellow
-        1.0, -1.0, -1.0, 0.0, 1.0, 0.0,  // v4 Green
-        1.0, 1.0, -1.0, 0.0, 1.0, 1.0,  // v5 Cyan
-        -1.0, 1.0, -1.0, 0.0, 0.0, 1.0,  // v6 Blue
-        -1.0, -1.0, -1.0, 0.0, 0.0, 0.0   // v7 Black
-    ]);
+let vertices = new Float32Array([
+    // Vertex coordinates and color
+    1.0, 1.0, 1.0, 1.0, 1.0, 1.0,  // v0 White
+    -1.0, 1.0, 1.0, 1.0, 0.0, 1.0,  // v1 Magenta
+    -1.0, -1.0, 1.0, 1.0, 0.0, 0.0,  // v2 Red
+    1.0, -1.0, 1.0, 1.0, 1.0, 0.0,  // v3 Yellow
+    1.0, -1.0, -1.0, 0.0, 1.0, 0.0,  // v4 Green
+    1.0, 1.0, -1.0, 0.0, 1.0, 1.0,  // v5 Cyan
+    -1.0, 1.0, -1.0, 0.0, 0.0, 1.0,  // v6 Blue
+    -1.0, -1.0, -1.0, 0.0, 0.0, 0.0   // v7 Black
+]);
 
-    let stride = 6;
+let stride = 6;
 
-    let a = [
-        {name: 'a_Position', size: 3, offset: 0},
-        {name: 'a_Color', size: 3, offset: 3 * vertices.BYTES_PER_ELEMENT},
-    ];
+let a = [
+    {name: 'a_Position', size: 3, offset: 0},
+    {name: 'a_Color', size: 3, offset: 3 * vertices.BYTES_PER_ELEMENT},
+];
 
-    enableInterLeavedAttribute(gl, a, vertices, vertices.BYTES_PER_ELEMENT * stride);
+enableInterLeavedAttribute(gl, a, vertices, vertices.BYTES_PER_ELEMENT * stride);
 
-    // Indices of the vertices
-    let indices = new Uint8Array([
-        0, 1, 2,
-        0, 2, 3,    // front
-        0, 3, 4,
-        0, 4, 5,    // right
-        0, 5, 6,
-        0, 6, 1,    // up
-        1, 6, 7,
-        1, 7, 2,    // left
-        7, 4, 3,
-        7, 3, 2,    // down
-        4, 7, 6,
-        4, 6, 5     // back
-    ]);
+// Indices of the vertices
+let indices = new Uint8Array([
+    0, 1, 2,
+    0, 2, 3,    // front
+    0, 3, 4,
+    0, 4, 5,    // right
+    0, 5, 6,
+    0, 6, 1,    // up
+    1, 6, 7,
+    1, 7, 2,    // left
+    7, 4, 3,
+    7, 3, 2,    // down
+    4, 7, 6,
+    4, 6, 5     // back
+]);
 
-    let indexBuffer = gl.createBuffer();
-    // Write the indices to the buffer object
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+let indexBuffer = gl.createBuffer();
+// Write the indices to the buffer object
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
 
-    let n = indices.length;
+let n = indices.length;
 
-    let u_MvpMatrix = gl.getUniformLocation(gl.program, 'u_MvpMatrix');
-    // Set the eye point and the viewing volume
-    let mvpMatrix = new Matrix4();
-    mvpMatrix.setPerspective(45, canvas.width / canvas.height, 1, 100);
-    mvpMatrix.lookAt(3, 3, 7, 0, 0, 0, 0, 1, 0);
+let u_MvpMatrix = gl.getUniformLocation(gl.program, 'u_MvpMatrix');
+// Set the eye point and the viewing volume
+let mvpMatrix = new Matrix4();
+let matrix = new Matrix4();
+mvpMatrix.setPerspective(45, canvas.width / canvas.height, 1, 100);
+mvpMatrix.lookAt(3, 3, 7, 0, 0, 0, 0, 1, 0);
+mvpMatrix.multiply(matrix);
 
-    // Pass the model view projection matrix to u_MvpMatrix
-    gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
+// Pass the model view projection matrix to u_MvpMatrix
+gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
+gl.uniform4f(gl.getUniformLocation(gl.program, 'u_Color'), 0.0, 0.0, 0.0, 0.0);
 
+function drawA() {
     // Clear color and depth buffer
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     // Draw the cube
     gl.drawElements(gl.TRIANGLES, n, gl.UNSIGNED_BYTE, 0);
+}
+
+
+gl.enable(gl.STENCIL_TEST);
+gl.enable(gl.DEPTH_TEST);
+gl.enable(gl.CULL_FACE);
+gl.cullFace(gl.FRONT);
+
+gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+
+gl.stencilFunc(gl.ALWAYS, 1, 0xff);
+// gl.colorMask(false, false, false, false);
+
+gl.drawElements(gl.TRIANGLES, n, gl.UNSIGNED_BYTE, 0);
+
+gl.stencilFunc(gl.NOTEQUAL, 1, 0xff);
+// gl.colorMask(true, true, true, true);
+
+matrix.scale(3, 0.5, 0.5);
+matrix.translate(0, -0.5, 1);
+mvpMatrix.multiply(matrix);
+// Pass the model view projection matrix to u_MvpMatrix
+gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
+gl.uniform4f(gl.getUniformLocation(gl.program, 'u_Color'), 1.0, 0.0, 0.0, 1.0);
+
+gl.drawElements(gl.TRIANGLES, n, gl.UNSIGNED_BYTE, 0);
 
 </script>
 </html>

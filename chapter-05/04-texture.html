@@ -12,7 +12,7 @@
 </body>
 
 <script>
-    const VERTEX_SHADER = `
+const VERTEX_SHADER = `
     attribute vec4 a_Position;
     attribute vec2 a_TexCoord;
     varying vec2 v_TexCoord;
@@ -21,7 +21,7 @@
         v_TexCoord = a_TexCoord;
         gl_Position = a_Position;
     }`;
-    const FRAGMENT_SHADER = `
+const FRAGMENT_SHADER = `
     precision mediump float;
     uniform sampler2D u_Sampler;
     varying vec2 v_TexCoord;
@@ -30,42 +30,50 @@
         gl_FragColor = texture2D(u_Sampler, v_TexCoord);
     }`;
 
-    // get webgl context
-    let canvas = document.getElementById('canvas');
-    let gl = canvas.getContext('webgl');
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+// get webgl context
+let canvas = document.getElementById('canvas');
+let gl = canvas.getContext('webgl');
+gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-    // init shader program
-    initProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+// init shader program
+initProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
 
-    let matrix = new THREE.Matrix4();
-    let clock = new THREE.Clock();
+let matrix = new THREE.Matrix4();
+let clock = new THREE.Clock();
 
-    let points = new Float32Array([
-        -0.5, 0.5, 0.0, 1.0,
-        -0.5, -0.5, 0.0, 0.0,
-        0.5, 0.5, 1.0, 1.0,
-        0.5, -0.5, 1.0, 0.0,
-    ]);
-    let stride = 4;
-    let n = points.length / stride;
+let points = new Float32Array([
+    -0.5, 0.5, 0.0, 1.0,
+    -0.5, -0.5, 0.0, 0.0,
+    0.5, 0.5, 1.0, 1.0,
+    0.5, -0.5, 1.0, 0.0,
+]);
+let stride = 4;
+let n = points.length / stride;
 
-    let a = [
-        {name: 'a_Position', size: 2, offset: 0},
-        {name: 'a_TexCoord', size: 2, offset: 2 * points.BYTES_PER_ELEMENT},
-    ];
+let a = [
+    {name: 'a_Position', size: 2, offset: 0},
+    {name: 'a_TexCoord', size: 2, offset: 2 * points.BYTES_PER_ELEMENT},
+];
 
-    enableInterLeavedAttribute(gl, a, points, points.BYTES_PER_ELEMENT * stride);
+enableInterLeavedAttribute(gl, a, points, points.BYTES_PER_ELEMENT * stride);
 
-    let u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler');
-    let image = new Image();
+let u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler');
+let image = new Image();
 
+let src = ['../assets/sky.jpg', '../assets/circle.gif', '../assets/beach.jpg'];
+let count = 0;
+let textureMap = {};
+let texture;
+setInterval(() => {
     image.onload = () => {
-        loadTexture(gl, u_Sampler, image, 0);
+        texture = loadTexture(gl, u_Sampler, image, 0, textureMap[image.src]);
+        textureMap[image.src] = texture;
 
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
     };
-    image.src = '../assets/sky.jpg';
+    image.src = src[count % 3];
+    count++;
+}, 2000);
 </script>
 </html>

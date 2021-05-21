@@ -20,6 +20,8 @@
         gl_Position = a_Position * u_Transform;
     }`;
     const FRAGMENT_SHADER = `
+    precision mediump float;
+
     void main() {
         gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
     }`;
@@ -38,8 +40,10 @@
     let u_Transform = gl.getUniformLocation(gl.program, 'u_Transform');
 
     let matrix = new THREE.Matrix4();
+    let matrix2 = new THREE.Matrix4();
     let rotateAngel = 0;
     let rotateStep = Math.PI / 4;
+    let scale = 0.95;
     let clock = new THREE.Clock();
 
     let points = new Float32Array([
@@ -61,22 +65,39 @@
     gl.enableVertexAttribArray(a_Position);
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    // gl.enable(gl.DEPTH_TEST);
+    // gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+    // gl.stencilMask(0xff);
 
     draw();
     function draw() {
-        gl.clear(gl.COLOR_BUFFER_BIT);
+        requestAnimationFrame(draw);
+        gl.enable(gl.STENCIL_TEST);
+
+        gl.clearColor(0.5, 0.5, 0.5, 1.0);
+        gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+
         let delta = clock.getDelta();
-
         rotateAngel += rotateStep * delta % Math.PI;
-
         matrix.makeRotationZ(rotateAngel);
 
-        gl.uniformMatrix4fv(u_Transform, false, new Float32Array(matrix.elements));
+        gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+        gl.stencilFunc(gl.ALWAYS, 1, 0xff);
+        gl.stencilMask(0xff);
+        gl.colorMask(false, false, false, false);
 
-        // draw
+        gl.uniformMatrix4fv(u_Transform, false, new Float32Array(matrix2.elements));
         gl.drawArrays(gl.TRIANGLES, 0, n);
 
-        requestAnimationFrame(draw);
+        gl.stencilFunc(gl.EQUAL, 1, 0xff);
+        gl.stencilMask(0x00);
+        gl.colorMask(true, true, true, true);
+
+        gl.uniformMatrix4fv(u_Transform, false, new Float32Array(matrix.elements));
+        gl.drawArrays(gl.TRIANGLES, 0, n);
+
+        gl.flush();
     }
 </script>
 </html>

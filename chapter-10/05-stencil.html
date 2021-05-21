@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://cdn.bootcss.com/d3/5.9.2/d3.min.js"></script>
+    <script src="../lib/three.js"></script>
+    <script src="../lib/object.js"></script>
+    <script src="../lib/utils.js"></script>
+    <script src="../lib/cuon-matrix.js"></script>
+</head>
+<body>
+<canvas id="glcanvas" width="480" height="360">
+    WebGL not supported!
+</canvas>
+</body>
+
+<script>
+(function() {
+    var gl;
+
+    var gProgram;
+
+    var gVertexAttribLocation;
+    var gColorAttribLocation;
+
+    var gTriangleVertexBuffer;
+    var gTriangleColorBuffer;
+    var gQuadVertexBuffer;
+    var gQuadColorBuffer;
+
+
+    function initGL() {
+        var glcanvas = document.getElementById("glcanvas");
+        gl = glcanvas.getContext("webgl", {stencil:true});
+    }
+
+    function createAndCompileShader(type, source) {
+        var shader = gl.createShader(type);
+
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            throw new Error(gl.getShaderInfoLog(shader));
+        }
+
+        return shader;
+    }
+
+    function createAndLinkProgram(glVertexShader, glFragmentShader) {
+        var glProgram = gl.createProgram();
+
+        gl.attachShader(glProgram, glVertexShader);
+        gl.attachShader(glProgram, glFragmentShader);
+        gl.linkProgram(glProgram);
+
+        if (!gl.getProgramParameter(glProgram, gl.LINK_STATUS)) {
+            throw new Error("Could not initialise shaders");
+        }
+
+        return glProgram;
+    }
+
+    function initShaderPrograms() {
+        var gVertexShader = createAndCompileShader(gl.VERTEX_SHADER, `
+    attribute vec4 a_Position;
+    attribute vec4 a_color;
+
+    void main() {
+        gl_Position = a_Position;
+    }`);
+
+        var gFragmentShader = createAndCompileShader(gl.FRAGMENT_SHADER, `
+    precision mediump float;
+
+    void main() {
+        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    }`);
+
+        gProgram = createAndLinkProgram(gVertexShader, gFragmentShader);
+    }
+
+    function initGLAttribLocations() {
+        gVertexAttribLocation = gl.getAttribLocation(gProgram, "a_Position");
+        gColorAttribLocation = gl.getAttribLocation(gProgram, "a_color");
+    }
+
+    function initBuffers() {
+        gTriangleVertexBuffer = gl.createBuffer();
+        gTriangleColorBuffer = gl.createBuffer();
+        gQuadVertexBuffer = gl.createBuffer();
+        gQuadColorBuffer = gl.createBuffer();
+
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, gTriangleVertexBuffer);
+        var vertices = new Float32Array([
+            0.0,  1.0,  0.0,
+            -1.0, -1.0,  0.0,
+            1.0, -1.0,  0.0,
+
+            0.0, -1.0,  0.0,
+            -1.0, 1.0,  0.0,
+            1.0, 1.0,  0.0
+        ]);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, gTriangleColorBuffer);
+        var colors = new Float32Array([
+            0.0, 1.0,  0.0, 1.0,
+            0.0, 1.0,  0.0, 1.0,
+            0.0, 1.0,  0.0, 1.0,
+
+            0.0, 0.0,  1.0, 1.0,
+            0.0, 0.0,  1.0, 1.0,
+            0.0, 0.0,  1.0, 1.0
+        ]);
+        gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, gQuadVertexBuffer);
+        var vertices = new Float32Array([
+            -1.0,  1.0,  0.0,
+            -1.0, -1.0,  0.0,
+            1.0, 1.0,  0.0,
+            1.0, -1.0,  0.0
+        ]);
+        for(let i = 0, ii = vertices.length; i < ii; ++i) {
+            vertices[i] *= 0.75;
+        }
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, gQuadColorBuffer);
+        var colors = new Float32Array([
+            1.0, 0.0, 0.0, 1.0,
+            1.0, 0.0, 0.0, 1.0,
+            1.0, 0.0, 0.0, 1.0,
+            1.0, 0.0, 0.0, 1.0,
+        ]);
+        gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+
+    }
+
+    function drawQuads() {
+        gl.bindBuffer(gl.ARRAY_BUFFER, gQuadVertexBuffer);
+        gl.vertexAttribPointer(gVertexAttribLocation, 3, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, gQuadColorBuffer);
+        gl.vertexAttribPointer(gColorAttribLocation, 4, gl.FLOAT, false, 0, 0);
+
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+
+    function drawTriagles() {
+        gl.bindBuffer(gl.ARRAY_BUFFER, gTriangleVertexBuffer);
+        gl.vertexAttribPointer(gVertexAttribLocation, 3, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, gTriangleColorBuffer);
+        gl.vertexAttribPointer(gColorAttribLocation, 4, gl.FLOAT, false, 0, 0);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+
+    function renderScene() {
+        gl.enable(gl.STENCIL_TEST);
+        // gl.enable(gl.DEPTH_TEST);
+        // gl.enable(gl.CULL_FACE);
+        gl.useProgram(gProgram);
+
+        gl.clearColor(0.5, 0.5, 0.5, 1.0);
+
+        gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+
+        gl.enableVertexAttribArray(gVertexAttribLocation);
+        gl.enableVertexAttribArray(gColorAttribLocation);
+
+        gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+
+        gl.stencilFunc(gl.ALWAYS, 1, 0xff);
+        gl.stencilMask(0xff);
+        gl.depthMask(false);
+        gl.colorMask(false, false, false, false);
+
+        drawTriagles();
+
+        gl.stencilFunc(gl.NOTEQUAL, 1, 0xff);
+        gl.stencilMask(0x00);
+        gl.depthMask(true);
+        gl.colorMask(true, true, true, true);
+
+        drawQuads();
+
+        // gl.disableVertexAttribArray(gVertexAttribLocation);
+        // gl.disableVertexAttribArray(gColorAttribLocation);
+
+        // gl.flush();
+    }
+
+
+    initGL();
+    initShaderPrograms();
+    initGLAttribLocations();
+    initBuffers();
+    renderScene();
+    // function animate() {
+    //     requestAnimationFrame(animate);
+    //     renderScene();
+    // }
+    // animate();
+}());
+</script>
+</html>
