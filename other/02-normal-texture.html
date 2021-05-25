@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="../lib/utils.js"></script>
+    <script src="../lib/three.js"></script>
+    <script src="../lib/cuon-matrix.js"></script>
+</head>
+<body>
+<canvas id="canvas" width="500" height="500"></canvas>
+</body>
+<script>
+(async () => {
+    const VS = `
+    attribute vec4 a_Position;
+    attribute vec4 a_Normal;
+    attribute vec2 a_TexCoord;
+
+    uniform mat4 u_MvpMatrix;
+
+    varying vec2 v_TexCoord;
+    varying vec4 v_Position;
+    varying vec4 v_Normal;
+
+    void main() {
+        v_TexCoord = a_TexCoord;
+        v_Position = a_Position;
+        v_Normal = a_Normal;
+        gl_Position = u_MvpMatrix * a_Position;
+    }
+`;
+    const FS = `
+    precision mediump float;
+
+    uniform sampler2D u_Sampler;
+    uniform sampler2D u_SamplerN;
+    uniform vec3 u_LightDirection;
+    uniform vec3 u_LightPosition;
+
+    varying vec2 v_TexCoord;
+    varying vec4 v_Position;
+    varying vec4 v_Normal;
+
+    void main() {
+        vec3 tex = texture2D(u_Sampler, v_TexCoord).rgb;
+        vec4 t_Normal = (texture2D(u_SamplerN, v_TexCoord) * 2.0 - 1.0);
+        // vec4 t_Normal = v_Normal;
+
+        float diffAngel = dot(-u_LightDirection, normalize(t_Normal.xyz));
+
+        vec3 diffuse = tex * vec3(0.2, 0.2, 0.2) * diffAngel;
+
+        float pointAngel = max(dot(normalize(u_LightPosition - v_Position.xyz), normalize(t_Normal.xyz)), 0.0);
+        vec3 point = vec3(1.0, 1.0, 1.0) * tex * pointAngel;
+
+        gl_FragColor = vec4(diffuse + point, 1.0);
+    }
+`;
+    const canvas = document.getElementById('canvas');
+    const gl = canvas.getContext('webgl');
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+
+    // .........................data.............................. TODO: 没有进行 TBN 转换，所以法线贴图没法正常工作
+
+    const vertexes = new Float32Array([
+        0.0, -1.0, -1.0,
+        0.0, 1.0, -1.0,
+        0.0, 1.0, 1.0,
+        0.0, -1.0, 1.0
+    ]);
+    const normal = new Float32Array([
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+    ]);
+    const texCoords = new Float32Array([
+        0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0
+    ]);
+    const indices = new Uint8Array([0, 1, 2, 0, 2, 3]);
+    const count = indices.length;
+
+    // .........................matrix..............................
+
+    const mvpMatrix = new Matrix4();
+    mvpMatrix.setPerspective(45, canvas.width / canvas.height, 0.1, 100);
+    mvpMatrix.lookAt(2, 0, 0, 0, 0, 0, 0, 1, 0);
+
+    const RTMvpMatrix = new Matrix4();
+    RTMvpMatrix.setInverseOf(mvpMatrix);
+    RTMvpMatrix.transpose();
+
+    // .......................................................
+
+    const program = createProgram(gl, VS, FS);
+    gl.useProgram(program);
+    enableAttribute(gl, 'a_Position', vertexes, 3, program);
+    enableAttribute(gl, 'a_Normal', normal, 3, program);
+    enableAttribute(gl, 'a_TexCoord', texCoords, 2, program);
+
+    let indexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+
+    // ...........................uniform............................
+
+    const u_Sampler = gl.getUniformLocation(program, 'u_Sampler');
+    const u_SamplerN = gl.getUniformLocation(program, 'u_SamplerN');
+    const u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
+    const u_LightDirection = gl.getUniformLocation(program, 'u_LightDirection');
+    const u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
+
+    const image = await loadImage('../assets/brickwall.jpg');
+    loadTexture(gl, u_Sampler, image, 0);
+
+    const normalImage = await loadImage('../assets/brickwall_normal.jpg');
+    loadTexture(gl, u_SamplerN, normalImage, 1);
+
+    gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
+    gl.uniform3fv(u_LightDirection, new Float32Array([-1.0, 0.0, 0.0]));
+    gl.uniform3fv(u_LightPosition, new Float32Array([0.25, 0.0, 0.0]));
+    // .......................................................
+
+    gl.useProgram(program);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_BYTE, 0);
+})();
+</script>
+</html>

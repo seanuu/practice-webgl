@@ -2,20 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9881c078-d7b1-42c4-9b7f-62435c69e1ac" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/chapter-10/04-shodow-mapping.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/chapter-10/05-stencil.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/object.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/other/01-cube-texture.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/other/02-normal-texture.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/other/03-cube-depth.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chapter-04/01-rotation-uniform.html" beforeDir="false" afterPath="$PROJECT_DIR$/chapter-04/01-rotation-uniform.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chapter-05/03-interleaved-triangle.html" beforeDir="false" afterPath="$PROJECT_DIR$/chapter-05/03-interleaved-triangle.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chapter-05/04-texture.html" beforeDir="false" afterPath="$PROJECT_DIR$/chapter-05/04-texture.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chapter-07/03-cube.html" beforeDir="false" afterPath="$PROJECT_DIR$/chapter-07/03-cube.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chapter-08/01-directive-light.html" beforeDir="false" afterPath="$PROJECT_DIR$/chapter-08/01-directive-light.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chapter-08/05-cube-texture.html" beforeDir="false" afterPath="$PROJECT_DIR$/chapter-08/05-cube-texture.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chapter-09/01-joint-model.html" beforeDir="false" afterPath="$PROJECT_DIR$/chapter-09/01-joint-model.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chapter-09/02-frame-buffer.html" beforeDir="false" afterPath="$PROJECT_DIR$/chapter-09/02-frame-buffer.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chapter-03/02-hello-triangle.html" beforeDir="false" afterPath="$PROJECT_DIR$/chapter-03/02-hello-triangle.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/object.js" beforeDir="false" afterPath="$PROJECT_DIR$/lib/object.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/utils.js" beforeDir="false" afterPath="$PROJECT_DIR$/lib/utils.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/other/01-cube-texture.html" beforeDir="false" afterPath="$PROJECT_DIR$/other/01-cube-texture.html" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -118,7 +111,7 @@
       <workItem from="1619408007815" duration="17292000" />
       <workItem from="1619495019187" duration="17909000" />
       <workItem from="1620463263025" duration="37835000" />
-      <workItem from="1620910468031" duration="45968000" />
+      <workItem from="1620910468031" duration="78750000" />
     </task>
     <servers />
   </component>

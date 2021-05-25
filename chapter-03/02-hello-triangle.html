@@ -11,49 +11,49 @@
 </body>
 
 <script>
-    const VERTEX_SHADER = `
+const VERTEX_SHADER = `
     attribute vec4 a_Position;
 
     void main() {
         gl_Position = a_Position;
     }`;
-    const FRAGMENT_SHADER = `
+const FRAGMENT_SHADER = `
     void main() {
         gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
     }`;
 
-    // get webgl context
-    let canvas = document.getElementById('canvas');
-    let gl = canvas.getContext('webgl');
+// get webgl context
+let canvas = document.getElementById('canvas');
+let gl = canvas.getContext('webgl');
 
-    // init shader program
-    initProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+// init shader program
+initProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
 
-    // get attribute location
-    let a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+// get attribute location
+let a_Position = gl.getAttribLocation(gl.program, 'a_Position');
 
-    let points = new Float32Array([
-        0.0, 0.0, 0.0,
-        0.5, 0.5, 0.0,
-        0.0, 0.5, 0.0
-    ]);
-    let n = points.length / 3;
+let points = new Float32Array([
+    0.0, 0.0, 0.0,
+    0.5, 0.5, 0.0,
+    0.0, 0.5, 0.0
+]);
+let n = points.length / 3;
 
-    // 1 create buffer
-    let buffer = gl.createBuffer();
-    // 2 bind buffer
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    // 3 write data to buffer
-    gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW);
-    // 4 distribute buffer to attribute
-    gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
-    // 5 enable attribute
-    gl.enableVertexAttribArray(a_Position);
+// 1 create buffer
+let buffer = gl.createBuffer();
+// 2 bind buffer
+gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+// 3 write data to buffer
+gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW);
+// 4 distribute buffer to attribute
+gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
+// 5 enable attribute
+gl.enableVertexAttribArray(a_Position);
 
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+gl.clearColor(0.0, 0.0, 0.0, 1.0);
+gl.clear(gl.COLOR_BUFFER_BIT);
 
-    // draw
-    gl.drawArrays(gl.TRIANGLES, 0, n);
+// draw
+gl.drawArrays(gl.TRIANGLES, 0, n);
 </script>
 </html>
