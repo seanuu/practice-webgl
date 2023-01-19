@@ -56,15 +56,27 @@ const FRAGMENT_SHADER = `
         // 计算对应于阴影贴图中的屏幕坐标，坐标系[-1,1] => [0, 1]
         vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;
 
-        // 获取纹素，取出深度信息
-        vec4 shadowDepth = texture2D(u_Sampler, shadowCoord.xy);
-        float depth = shadowDepth.r;
+        float visibility = 0.0;
+        float texelSize = 1.0 / 1024.0;
 
-        float visibility = (shadowCoord.z > depth + (1.0 / 255.0)) ? 0.7 : 1.0;
+        // PCF（percentage-closer filtering）
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                // 获取纹素，取出深度信息
+                vec4 shadowDepth = texture2D(u_Sampler, shadowCoord.xy + vec2(i, j) * texelSize);
+                float depth = shadowDepth.r;
+
+                // (1.0 / 255.0) 增加一个单位精度用于去掉摩尔纹
+                visibility += (shadowCoord.z > depth + (1.0 / 255.0)) ? 0.5 : 1.0;
+            }
+        }
+
+        visibility = visibility / 9.;
+
         gl_FragColor = vec4(v_Color.rgb * visibility, v_Color.a);
     }`;
 
-const OFFSCREEN_WIDTH = 4096, OFFSCREEN_HEIGHT = 4096;
+const OFFSCREEN_WIDTH = 1024, OFFSCREEN_HEIGHT = 1024;
 const LIGHT_X = 0, LIGHT_Y = 7, LIGHT_Z = 2; // Position of the light source
 
 const canvas = document.getElementById('canvas');
@@ -143,7 +155,7 @@ function animate() {
     gl.uniformMatrix4fv(normalProgram.u_MvpMatrixFromLight, false, mvpMatrixFromLight_p.elements);
     drawPlane(gl, normalProgram, plan, vpMatrix);
 
-    requestAnimationFrame(animate);
+    // requestAnimationFrame(animate);
 }
 
 function drawTriangle(gl, program, triangle, angle, viewProjMatrix) {
